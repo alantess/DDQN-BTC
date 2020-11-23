@@ -12,6 +12,7 @@ class Agent(object):
         self.n_actions = n_actions
         self.batch_size = batch_size
         self.gamma = gamma
+        self.eps_min = 0.01
         self.epsilon = epsilon
         self.env = env
         self.memory = ReplayBuffer(capacity, input_dims,n_actions)
@@ -42,6 +43,7 @@ class Agent(object):
         if self.update_cntr % self.replace == 0:
             self.q_eval.load_state_dict(self.q_train.state_dict())
 
+
     def save(self):
         print('Saving...')
         self.q_eval.save()
@@ -51,3 +53,36 @@ class Agent(object):
         print('Loading...')
         self.q_eval.load()
         self.q_train.load()
+
+    def learn(self):
+        if self.memory.mem_cntr < self.batch_size:
+            return
+
+        states, actions, rewards, states_, done = self.memory.sample_buffer(self.batch_size)
+
+        states = T.tensor(states, dtype=T.float).to(self.q_eval.device)
+        actions = T.tensor(actions, dtype=T.int64).to(self.q_eval.device)
+        rewards = T.tensor(rewards, dtype=T.float).to(self.q_eval.device)
+        states_ =T.tensor(states_, dtype=T.float).to(self.q_eval.device)
+        done = T.tensor(done, dtype=T.bool).to(self.q_eval.device)
+
+        self.q_train.optimizer.zero_grad()
+        self.update_target_network()
+
+
+        q_pred = (self.q_train.forward(states) * actions).sum(dim=1)
+        q_next = self.q_eval.forward(states_).sum(dim=1)
+        q_train = self.q_train.forward(states_).sum(dim=1)
+
+        max_action = T.argmax(q_train)
+        print(max_action.size())
+        q_next[done] = 0.0
+
+
+
+
+        self.update_cntr += 1
+        self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_min else self.eps_min
+
+
+
