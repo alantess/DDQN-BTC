@@ -8,7 +8,6 @@ def retrieve_data():
     df = pd.read_csv(btc_data)
     df = df.drop(columns=['date', 'weighted','volume'])
 # Columns are set at close, high, low and open.
-    print(df.tail())
     df = df.dropna()
     data = df.values
     return data
