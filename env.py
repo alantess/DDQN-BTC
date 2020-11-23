@@ -1,4 +1,5 @@
 import numpy as np
+from gym.utils import seeding
 
 class BTC(object):
     def __init__(self, data, investment=5000):
@@ -10,18 +11,28 @@ class BTC(object):
         self.reward_dec = 1.0 
         self.btc_wallet = None
         self.btc_price = None
+        self.total = 0
+        self.profits = [] 
         # Action Space Holds 9 different Action from Hold to (25% - 100%) Buy
         self.action_space = np.arange(9)
         # Vector [ close, high, low, open, bitcoin wallet, usd wallet]
         self.observation_space = np.empty(self.n_headers + 2, dtype=np.float)
         self.reset()
+        self._seed()
+
+    def _seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
 
     def reset(self):
         self.time_step = 0
+        self.profits= []
+        self.total = 0
         self.btc_wallet = 0
         self.usd_wallet = self.initial_investment
         self._get_price()
-        self.reward_dec = self.reward_dec - 0.75e-3 if self.reward_dec > 0 else 0 
+        self.reward_dec = self.reward_dec - 0.99e-3 if self.reward_dec > 0 else 0 
         return self._get_state()
 
     def step(self,action):
@@ -37,7 +48,8 @@ class BTC(object):
         self.time_step += 1
         # Holdings from new state
         new_holdings = self.btc_wallet + self.usd_wallet
-
+        self.total = new_holdings
+        self.profits.append(new_holdings) 
         # Determines whether the trade was good or bad
         earnings_ratio  = new_holdings / prev_holdings
 
@@ -49,26 +61,27 @@ class BTC(object):
         info = {'Bitcoin': self.btc_wallet,
                 'USD': self.usd_wallet}
 
-        # Calculate Reward
-        if earnings_ratio == 1:
-            reward = 0.0
-        elif 1 < earnings_ratio <= 2:
-            reward = (self.reward_dec*0.01) + 0.1
-        elif 0 <= earnings_ratio < 1:
-            reward = (self.reward_dec*-0.01) - 0.1
-        elif 2 < earnings_ratio <= 3:
-            reward = (self.reward_dec*0.015) + 0.2
-        elif -1 <= earnings_ratio < 0:
-            reward = (self.reward_dec*-0.015) - 0.2
-        elif earnings_ratio < -1:
-            reward = (self.reward_dec*-0.025) - 0.3
-        elif earnings_ratio > 3:
-            reward = (self.reward_dec*0.025) + 0.3
-        else:
-            reward = self.reward_dec
+        rewards = (new_holdings - prev_holdings) * self.reward_dec
+        reward = (rewards * 0.5) + (np.linalg.norm(self.profits) * 0.01) 
+        if done:
+            if self.total > 70 * self.initial_investment:
+                reward += 100
+            else:
+                reward -=100
+        # Combined  Reward
+        # if earnings_ratio == 1:
+            # reward = 0.0
+        # elif earnings_ratio > 1:
+            # reward = (self.reward_dec * 0.02) + 0.1 
+        # else:
+            # reward = (self.reward_dec * -0.02) - 0.1
 
-
-
+        # Implement Reward Delay using timestep , total holdings, and investment  
+#         if self.time_step % 30 == 0:
+            # if self.total > self.initial_investment:
+                # reward += 0.05
+            # else:
+                # reward - 0.05
 
         if done:
             if new_holdings > 80 * self.initial_investment:

@@ -9,7 +9,7 @@ class MyTestCase(unittest.TestCase):
     def test_action_sample(self):
         data = retrieve_data()
         env = BTC(data)
-        for i in range(2):
+        for i in range(5):
             state = env.reset()
             score = 0
             done = False
@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         env = BTC(data)
         agent = Agent(lr=0.0003, input_dims=env.observation_space.shape[0],n_actions=env.action_space.shape[0],
                       batch_size=64, epsilon=1.0, env=env)
-        for i in range(2):
+        for i in range(5):
             state = env.reset()
             done = False
             while not done:

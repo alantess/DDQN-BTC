@@ -8,7 +8,7 @@ if __name__ == '__main__':
     data = retrieve_data()
     env = BTC(data)
     agent = Agent(lr=0.0003, input_dims=env.observation_space.shape[0], n_actions=env.action_space.shape[0],
-                  batch_size=64, epsilon=1.0, env=env, replace=2000)
+                  batch_size=256, epsilon=1.0, env=env, replace=3000)
     scores = []
     running_avg = []
     best_score = -np.inf
@@ -31,7 +31,7 @@ if __name__ == '__main__':
             agent.save()
             best_score = avg_score
 
-        print(f'Episode {i}:\tScore {score:.3f} | Average Score {avg_score:.3f} | Best Score {best_score:.2f} | {info} |Epsilon {agent.epsilon} | Reward: {env.reward_dec}')
+        print(f'Episode {i}:\tScore {score:.3f} | Average Score {avg_score:.3f} | Best Score {best_score:.2f} | {env.total:.2f} |Epsilon {agent.epsilon:.3f} | Reward: {env.reward_dec:.3f}')
 
 
     plt.plot(running_avg)
