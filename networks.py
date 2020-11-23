@@ -18,6 +18,7 @@ class DDQN(nn.Module):
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.q = nn.Linear(self.fc2_dims, n_actions)
 
+        self.loss = nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr =lr)
         self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
         self.to(self.device)

@@ -9,7 +9,7 @@ class MyTestCase(unittest.TestCase):
     def test_action_sample(self):
         data = retrieve_data()
         env = BTC(data)
-        for i in range(10):
+        for i in range(1):
             state = env.reset()
             score = 0
             done = False
@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         env = BTC(data)
         agent = Agent(lr=0.0003, input_dims=env.observation_space.shape[0],n_actions=env.action_space.shape[0],
                       batch_size=64, epsilon=1.0, env=env)
-        for i in range(10):
+        for i in range(1):
             state = env.reset()
             done = False
             while not done:
@@ -34,6 +34,22 @@ class MyTestCase(unittest.TestCase):
                 state = state_
                 self.assertTrue(0 <= action <= 8)
 
+# Test agent's learn function
+    def test_learn(self):
+        data = retrieve_data()
+        env = BTC(data)
+        agent = Agent(lr=0.0003, input_dims=env.observation_space.shape[0], n_actions=env.action_space.shape[0],
+                      batch_size=64, epsilon=1.0, env=env)
+        for i in range(10):
+            state = env.reset()
+            done = False
+            while not done:
+                action = agent.pick_action(state)
+                state_, reward, done, info = env.step(action)
+                agent.store_transition(state, action, reward,state_, done)
+                agent.learn()
+                state = state_
+                self.assertTrue(0 <= action <= 8)
 
 
 if __name__ == '__main__':

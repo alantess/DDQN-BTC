@@ -70,14 +70,20 @@ class Agent(object):
         self.update_target_network()
 
 
+        indices = np.arange(self.batch_size)
         q_pred = (self.q_train.forward(states) * actions).sum(dim=1)
-        q_next = self.q_eval.forward(states_).sum(dim=1)
-        q_train = self.q_train.forward(states_).sum(dim=1)
+        q_next = self.q_eval.forward(states_)
+        q_train = self.q_train.forward(states_)
 
-        max_action = T.argmax(q_train)
-        print(max_action.size())
+        max_action = T.argmax(q_train,dim=1)
         q_next[done] = 0.0
 
+        y = rewards + self.gamma*q_next[indices,max_action]
+
+        loss = self.q_train.loss(y,q_pred).to(self.q_eval.device)
+        loss.backward()
+
+        self.q_train.optimizer.step()
 
 
 

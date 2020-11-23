@@ -51,9 +51,9 @@ class BTC(object):
         if earnings_ratio == 1:
             reward = 0.0
         elif earnings_ratio > 1:
-            reward = 0.1
+            reward = 0.5
         else:
-            reward = -0.1
+            reward = -0.5
 
         if done:
             if new_holdings > 80 * self.initial_investment:
