@@ -3,11 +3,12 @@ import torch as T
 import torch.nn as nn
 from networks import DDQN
 from memory import ReplayBuffer
+from sklearn.preprocessing import StandardScaler
 
 class Agent(object):
     def __init__(self, lr, input_dims, n_actions,epsilon, batch_size,env,
                  capacity=1000000, eps_dec=5e-7, fc1_dims = 256, fc2_dims=256,
-                 repalce=1000, gamma=0.99,):
+                 replace=1000, gamma=0.99,):
         self.input_dims = input_dims
         self.n_actions = n_actions
         self.batch_size = batch_size
@@ -17,16 +18,19 @@ class Agent(object):
         self.env = env
         self.memory = ReplayBuffer(capacity, input_dims,n_actions)
         self.eps_dec = eps_dec
-        self.replace = repalce
+        self.replace = replace
         self.update_cntr = 0
+        self.scaler = self._get_scaler(env)
 
         # Evaluate network
         self.q_eval = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name='_eval')
         # Training Network
         self.q_train = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name='_train')
 
+    # Normalize the observation
     def pick_action(self, obs):
         if np.random.random() > self.epsilon:
+            obs = self.scaler.transform([obs])
             state = T.tensor([obs], dtype=T.float).to(self.q_eval.device)
             actions = self.q_train.forward(state)
             action = T.argmax(actions).item()
@@ -35,7 +39,24 @@ class Agent(object):
 
         return action
 
+# For normalizing states -- _get_scaler(env)
+    def _get_scaler(self, env):
+        states = []
+        for _ in range(self.env.n_steps):
+            action = self.env.sample_action()
+            state_, reward, done, _ = self.env.step(action)
+            states.append(state_)
+            if done:
+                break
+        scaler = StandardScaler()
+        scaler.fit(states)
+        return scaler
+
+
+
     def store_transition(self, state, action, reward, state_, done):
+        state = self.scaler.transform([state])
+        state_ = self.scaler.transform([state_])
         self.memory.store_transition(state, action, reward,state_,done)
 
 
@@ -53,7 +74,7 @@ class Agent(object):
         print('Loading...')
         self.q_eval.load()
         self.q_train.load()
-
+    # Normalize the states, create a function
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
             return

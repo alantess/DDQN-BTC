@@ -7,6 +7,7 @@ class BTC(object):
         self.time_step = 0
         self.initial_investment = investment
         self.usd_wallet = None
+        self.reward_dec = 1.0 
         self.btc_wallet = None
         self.btc_price = None
         # Action Space Holds 9 different Action from Hold to (25% - 100%) Buy
@@ -20,6 +21,7 @@ class BTC(object):
         self.btc_wallet = 0
         self.usd_wallet = self.initial_investment
         self._get_price()
+        self.reward_dec = self.reward_dec - 0.75e-3 if self.reward_dec > 0 else 0 
         return self._get_state()
 
     def step(self,action):
@@ -50,10 +52,23 @@ class BTC(object):
         # Calculate Reward
         if earnings_ratio == 1:
             reward = 0.0
-        elif earnings_ratio > 1:
-            reward = 0.5
+        elif 1 < earnings_ratio <= 2:
+            reward = (self.reward_dec*0.01) + 0.1
+        elif 0 <= earnings_ratio < 1:
+            reward = (self.reward_dec*-0.01) - 0.1
+        elif 2 < earnings_ratio <= 3:
+            reward = (self.reward_dec*0.015) + 0.2
+        elif -1 <= earnings_ratio < 0:
+            reward = (self.reward_dec*-0.015) - 0.2
+        elif earnings_ratio < -1:
+            reward = (self.reward_dec*-0.025) - 0.3
+        elif earnings_ratio > 3:
+            reward = (self.reward_dec*0.025) + 0.3
         else:
-            reward = -0.5
+            reward = self.reward_dec
+
+
+
 
         if done:
             if new_holdings > 80 * self.initial_investment:

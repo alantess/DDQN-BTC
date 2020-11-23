@@ -32,7 +32,7 @@ class DDQN(nn.Module):
         return q
 
     def save(self):
-        T.save(self.load_state_dict(), self.file)
+        T.save(self.state_dict(), self.file)
 
     def load(self):
         self.load_state_dict(T.load(self.file))
