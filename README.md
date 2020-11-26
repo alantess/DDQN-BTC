@@ -12,7 +12,7 @@ Goal: Manipulated reward structure to improve DDQN performance
 
 # Performance
 Evaluated performance on bitcoin prices between Nov.7.2020 ~ Nov.25.2020
-Agent starts with $5,000.
+(Agent starts with $5,000).
 ![(Performance on test data [1]) Performance](score_plt_test.png "First Test Run")
 ![(Performance on test data [2]) Performance](score_plt_test_2.png "Second Test Run")
 
