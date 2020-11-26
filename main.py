@@ -14,7 +14,7 @@ if __name__ == '__main__':
     # Load agent, retrieve bitcoin data, and create environment
     load_agent = args.load
     data = retrieve_data()
-    env = BTC(data)
+    env = BTC(data,100)
     # Create Agent
     if load_agent:
         print('Trained Agent Loading...')
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     col /= max(col)
     for c, p in zip(col, patches):
         plt.setp(p, 'facecolor', cm(c))
-    plt.savefig('score_plt_test_2.png')
+    # plt.savefig('score_plt_test_2_.png')
+    plt.show()
 
 

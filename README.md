@@ -43,8 +43,12 @@ $ python main.py -games 100
 For unit testing
 
 ```sh
-$ python test.py`
+$ python test.py
 ```
+# TODO
+- Add more actions 
+    - Environment should allow agent to purchase multiple bitcoins instead of 1
+- Retrain Agent
 
 
 License
