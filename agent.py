@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 class Agent(object):
     def __init__(self, lr, input_dims, n_actions,epsilon, batch_size,env,
-                 capacity=1000000, eps_dec=5e-7, fc1_dims = 256, fc2_dims=256,
+                 capacity=1000000, eps_dec=4.5e-7, fc1_dims = 512, fc2_dims=256,
                  replace=1000, gamma=0.99,):
         self.input_dims = input_dims
         self.n_actions = n_actions
