@@ -9,6 +9,7 @@ Goal: Manipulated reward structure to improve DDQN performance
   - Single scalar of [Close,High Low, Open , BTC Wallet, USD Wallet]
   - Step: A trade happens at every step: Hold or Purchase (0 - 100%)
   - Reward: Combined rewards ==> δ*r[dense] + r[sparse] , where δ = 1.0 --> 0.0
+  - Contains 9 different actions
 
 # Performance
 Evaluated performance on bitcoin prices between Nov.7.2020 ~ Nov.25.2020
