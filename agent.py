@@ -7,8 +7,8 @@ from sklearn.preprocessing import StandardScaler
 
 class Agent(object):
     def __init__(self, lr, input_dims, n_actions,epsilon, batch_size,env,
-                 capacity=1000000, eps_dec=4.5e-7, fc1_dims = 512, fc2_dims=512,
-                 replace=1000, gamma=0.99):
+                 capacity=1000000, eps_dec=4.5e-7, fc1_dims = 512, fc2_dims=256,
+                 replace=1000, gamma=0.99,network_name='_eval'):
         self.input_dims = input_dims
         self.n_actions = n_actions
         self.batch_size = batch_size
@@ -23,9 +23,9 @@ class Agent(object):
         self.scaler = self._get_scaler(env)
 
         # Evaluate network
-        self.q_eval = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name='_eval2')
+        self.q_eval = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name=network_name)
         # Training Network
-        self.q_train = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name='_train2')
+        self.q_train = DDQN(lr=lr, input_dims=self.input_dims,n_actions=self.n_actions,fc1_dims=fc1_dims, fc2_dims=fc2_dims,network_name=network_name)
 
     # Normalize the observation
     def pick_action(self, obs):
