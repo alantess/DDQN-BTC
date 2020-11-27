@@ -30,13 +30,12 @@ $ python main.py
 For training: Run main.py
 
 ```sh
-$ python main.py -load False
-```
+$ python main.py ```
 - Test performance on price between Nov 7th ~ Nov 25th
 - Use "-games" to change the episodes length. 
 - Default is 1000 episodes 
 ```sh
-$ python main.py -games 100
+$ python main.py -load=True -games 100
 ```
 
 

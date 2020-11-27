@@ -14,7 +14,8 @@ class BTC(object):
         self.total = 0
         self.profits = [] 
         # Action Space Holds 9 different Action from Hold to (25% - 100%) Buy
-        self.action_space = np.arange(9)
+        # Updated action to 17 --> Environment allows buys and sells up to 500%
+        self.action_space = np.arange(17)
         # Vector [ close, high, low, open, bitcoin wallet, usd wallet]
         self.observation_space = np.empty(self.n_headers + 2, dtype=np.float)
         self.reset()
@@ -102,6 +103,35 @@ class BTC(object):
         # Hold
         if action == 0:
             return
+
+
+        # Purchase 500%
+        if action == 9:
+            self._buy_or_sell(purchase=True, percentage=5.0)
+        # Sell 500%
+        if action == 10:
+            self._buy_or_sell(purchase=False,percentage=5.0)
+        # Purchase 400%
+        if action == 11:
+            self._buy_or_sell(purchase=True,percentage=4.00)
+        # Sell 400%
+        if action == 12:
+            self._buy_or_sell(purchase=False, percentage=4.00)
+        # Purchase 300%
+        if action == 13:
+            self._buy_or_sell(purchase=True,percentage=3.0)
+        # Sell 300%
+        if action == 14:
+            self._buy_or_sell(purchase=False,percentage=3.0)
+        # Purchase 200%
+        if action == 15:
+            self._buy_or_sell(purchase=True, percentage=2.00)
+        # Sell 200%
+        if action == 16:
+            self._buy_or_sell(purchase=False, percentage=2.00)
+
+ 
+
         # Purchase 100%
         if action == 1:
             self._buy_or_sell(purchase=True, percentage=1.0)
