@@ -6,17 +6,16 @@ Goal: Manipulated reward structure to improve DDQN performance
 
 # Environment
 
+
   - Single scalar of [Close,High Low, Open , BTC Wallet, USD Wallet]
   - Step: A trade happens at every step: Hold or Purchase (0 - 100%)
   - Reward: Combined rewards ==> δ*r[dense] + r[sparse] , where δ = 1.0 --> 0.0
+  - Contains 17 different actions
 
 # Performance
 Evaluated performance on bitcoin prices between Nov.7.2020 ~ Nov.25.2020
 (Agent starts with $5,000).
-![(Performance on test data [1]) Performance](score_plt_test.png "First Test Run")
-![(Performance on test data [2]) Performance](score_plt_test_2.png "Second Test Run")
-
-
+![(Performance on test data [1]) Performance](Avg_Earnings.png "First Test Run")
 
 ### Installation
 

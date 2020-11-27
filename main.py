@@ -82,7 +82,7 @@ if __name__ == '__main__':
     col /= max(col)
     for c, p in zip(col, patches):
         plt.setp(p, 'facecolor', cm(c))
-    plt.savefig('Avg_Earnings.png')
+    # plt.savefig('Avg_Earnings.png')
     plt.show()
 
 
