@@ -30,13 +30,13 @@ For training: Run main.py
 
 - Test performance on price between Nov 7th ~ Nov 25th
 - Use "-games" to change the episodes length. 
+- Use "-load" to load agent [False, True]
 - Default is 1000 episodes 
 ```sh
-$ python main.py ```
-
-```sh
-$ python main.py -load=True -games 100
+$ python main.py
 ```
+
+
 
 
 For unit testing
