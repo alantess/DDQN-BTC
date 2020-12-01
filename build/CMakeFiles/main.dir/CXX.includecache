@@ -11,7 +11,15 @@ memory.h
 /home/alan/Programming/torch/bitcoin/memory.h
 algorithm
 -
+cstdio
+-
+fstream
+-
 iostream
+-
+sstream
+-
+string
 -
 torch/torch.h
 -

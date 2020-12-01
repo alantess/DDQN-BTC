@@ -123,6 +123,33 @@ main/fast:
 	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
 .PHONY : main/fast
 
+env.o: env.cpp.o
+
+.PHONY : env.o
+
+# target to build an object file
+env.cpp.o:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/env.cpp.o
+.PHONY : env.cpp.o
+
+env.i: env.cpp.i
+
+.PHONY : env.i
+
+# target to preprocess a source file
+env.cpp.i:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/env.cpp.i
+.PHONY : env.cpp.i
+
+env.s: env.cpp.s
+
+.PHONY : env.s
+
+# target to generate assembly for a file
+env.cpp.s:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/env.cpp.s
+.PHONY : env.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -186,6 +213,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... main"
+	@echo "... env.o"
+	@echo "... env.i"
+	@echo "... env.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
