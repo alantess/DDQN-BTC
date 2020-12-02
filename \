@@ -7,7 +7,6 @@
 #include <sstream>
 #include <string>
 #include <torch/torch.h>
-#include <unordered_map>
 #include <vector>
 
 using namespace std;
@@ -42,14 +41,6 @@ torch::Tensor get_data() {
 
 class Env {
 public:
-  // Variable user gets back
-  torch::Tensor state, state_, reward;
-  torch::Tensor data, profits, action_space, observation_space, btc_price, done,
-      usr_action;
-  float investment, prev_holdings, new_holdings, rewards, usd_wallet,
-      btc_wallet, reward_dec, total;
-  int size, n_steps, timestep, n_headers;
-
   Env(torch::Tensor x, float y) : data(x), investment(y) {
     size = 3647;
     n_steps = size;
@@ -64,6 +55,7 @@ public:
     observation_space = torch::zeros(n_headers + 2, torch::kFloat32);
     reset();
   }
+
   // Reset the environment
   torch::Tensor reset() {
     timestep = 0;
@@ -77,23 +69,21 @@ public:
     return state;
   }
   // Take a step in the environment
-  unordered_map<string, torch::Tensor> step(int action) {
+  torch::Tensor step(int action) {
     assert(action >= 0 && action < 9);
     get_price();
-    rewards = 0.0;
-    reward = torch::tensor(0, torch::kFloat32);
-    prev_holdings = btc_wallet + usd_wallet;
+    float reward = 0.0;
+    float prev_holdings = btc_wallet + usd_wallet;
     // Perform Action and update wallets
     action_set(action);
     update_btc_wallet();
     // Increment timestep
     timestep += 1;
     // Rewards calc
-    new_holdings = btc_wallet + usd_wallet;
+    float new_holdings = btc_wallet + usd_wallet;
     total = new_holdings;
     profits[timestep - 1] = new_holdings;
-    rewards = ((new_holdings - prev_holdings) * reward_dec) * 0.5;
-    reward = torch::tensor(rewards, torch::kFloat32) + (norm(profits) * 0.1);
+    float rewards = ((new_holdings - prev_holdings) * reward_dec) * 0.5;
 
     // s'
     state_ = get_state();
@@ -103,31 +93,19 @@ public:
     } else {
       done = torch::tensor(false, torch::kBool);
     }
-
     // Actions to tensor
     usr_action = torch::tensor(action);
     // info
     torch::Tensor info = torch::tensor(total);
-
-    // return multiple values
-    unordered_map<string, torch::Tensor> mapping;
-    mapping["state"] = state;
-    mapping["reward"] = reward;
-    mapping["done"] = done;
-    mapping["info"] = info;
-    return mapping;
   }
+  // Variable user gets back
+  torch::Tensor state, state_;
+  torch::Tensor data, profits, action_space, observation_space, btc_price, done,
+      usr_action;
+  float investment, usd_wallet, btc_wallet, reward_dec, total;
+  int size, n_steps, timestep, n_headers;
 
 private:
-  // Frobenius norm
-  template <class tensor> tensor norm(tensor z) {
-    tensor y = torch::tensor(0, torch::kFloat32);
-    for (int i = 0; i < z.sizes()[0]; i++) {
-      y += torch::abs(torch::pow(z[i], 2));
-    }
-    return torch::sqrt(y);
-  }
-
   // Actions set descriptions
   void action_set(int action) {
     switch (action) {
@@ -205,10 +183,11 @@ int main() {
   torch::Tensor data = get_data();
   torch::Tensor state;
   float money = 5000.00;
+  torch::Tensor z = torch::tensor({4, 2, 4, 56});
+  torch::Tensor y = torch::tensor(0);
+  for (int i = 0; i < z.sizes()[0]; i++) {
+    y += torch::abs(torch::pow(z[i], 2));
+  }
 
   Env env(data, money);
-  torch::Tensor s_, reward, done, info;
-  unordered_map<string, torch::Tensor> mapping = env.step(3);
-  cout << mapping["state"] << mapping["info"] << mapping["done"]
-       << mapping["reward"] << endl;
 }

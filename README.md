@@ -3,7 +3,7 @@
 ## Todos
 - Retrieve & normalize data 
 - Create Network Class
-- Create Environment Class
+- Create Environment Class  ✔️
 - Create Agent Class
 - Create Replay Memory ✔️
 

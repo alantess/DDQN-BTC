@@ -11,6 +11,8 @@ memory.h
 /home/alan/Programming/torch/bitcoin/memory.h
 algorithm
 -
+cassert
+-
 cstdio
 -
 fstream
@@ -22,6 +24,10 @@ sstream
 string
 -
 torch/torch.h
+-
+unordered_map
+-
+vector
 -
 
 /home/alan/Programming/torch/bitcoin/memory.h
