@@ -4,11 +4,11 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <string>
 #include <torch/torch.h>
 #include <unordered_map>
-#include <vector>
 
 using namespace std;
 
@@ -29,9 +29,7 @@ torch::Tensor get_data() {
           ss.ignore();
 
         result[i - 1][j] = val;
-        if (i == 0) {
-          cout << val;
-        }
+
         j++;
       }
       i++;
@@ -117,6 +115,13 @@ public:
     mapping["info"] = info;
     return mapping;
   }
+  // Choose ranndom actions
+  int sample_actions() {
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, 8); // define the range
+    return distr(gen);                           // generate numbers
+  }
 
 private:
   // Frobenius norm
@@ -170,11 +175,11 @@ private:
       if (usd_wallet > amount) {
         usd_wallet -= amount;
         btc_wallet += amount;
-      } else {
-        if (btc_wallet >= amount) {
-          btc_wallet -= amount;
-          usd_wallet += amount;
-        }
+      }
+    } else {
+      if (btc_wallet >= amount) {
+        btc_wallet -= amount;
+        usd_wallet += amount;
       }
     }
   }
@@ -207,8 +212,17 @@ int main() {
   float money = 5000.00;
 
   Env env(data, money);
-  torch::Tensor s_, reward, done, info;
-  unordered_map<string, torch::Tensor> mapping = env.step(3);
-  cout << mapping["state"] << mapping["info"] << mapping["done"]
-       << mapping["reward"] << endl;
+
+  int action;
+  unordered_map<string, torch::Tensor> mapping;
+  // Example loop
+  for (int k = 0; k < 10; k++) {
+    cout << "Step " << k << endl;
+    action = env.sample_actions();
+    cout << "Action Taken: " << action << endl;
+    mapping = env.step(action);
+    cout << "STate_" << mapping["state"] << "\nInfo" << mapping["info"]
+         << "\nDone" << mapping["done"] << "\nREWARD" << mapping["reward"]
+         << endl;
+  }
 }
