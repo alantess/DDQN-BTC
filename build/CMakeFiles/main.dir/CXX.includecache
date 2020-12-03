@@ -7,8 +7,6 @@
 #IncludeRegexTransform: 
 
 /home/alan/Programming/torch/bitcoin/main.cpp
-memory.h
-/home/alan/Programming/torch/bitcoin/memory.h
 algorithm
 -
 cassert
@@ -28,10 +26,6 @@ string
 torch/torch.h
 -
 unordered_map
--
-
-/home/alan/Programming/torch/bitcoin/memory.h
-torch/torch.h
 -
 
 /home/alan/libtorch/include/ATen/ATen.h

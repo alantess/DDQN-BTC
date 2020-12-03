@@ -1,4 +1,3 @@
-#include "memory.h"
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -197,17 +196,69 @@ private:
     return state;
   }
 };
+// Replay Memory
+class ReplayBuffer {
+public:
+  // CONSTRUCTOR
+  ReplayBuffer(int a, int b, int c) : max_mem(a), input_dims(b), n_actions(c) {
+    idx = 0;
+    mem_cntr = 0;
+    max_memory = max_mem;
+    state_memory = torch::zeros({max_mem, input_dims}, torch::kFloat32);
+    action_memory = torch::zeros({max_mem, n_actions}, torch::kInt32);
+    reward_memory = torch::zeros(max_mem, torch::kFloat32);
+    new_state_memory = torch::zeros({max_mem, input_dims}, torch::kFloat32);
+    terminal_memory = torch::zeros(max_mem, torch::kBool);
+  }
+  // STORE EXPERIENCE
+  void store_transitions(torch::Tensor state, torch::Tensor action,
+                         torch::Tensor reward, torch::Tensor state_,
+                         torch::Tensor done) {
+    idx = mem_cntr % max_memory;
+    state_memory[idx] = state;
+    action_memory[idx] = action;
+    reward_memory[idx] = reward;
+    new_state_memory[idx] = state_;
+    terminal_memory[idx] = done;
+    mem_cntr += 1;
+  }
+  // RETURN EXPERIENCE
+  unordered_map<string, torch::Tensor> sample_buffer(int batch_size) {
+    max_memory = min(mem_cntr, max_memory);
+    min_mem = torch::arange(max_memory, torch::kFloat32);
+    batch = torch::multinomial(min_mem, batch_size);
+    states = state_memory.index({batch});
+    actions = action_memory.index({batch});
+    rewards = reward_memory.index({batch});
+    states_ = new_state_memory.index({batch});
+    dones = terminal_memory.index({batch});
+    unordered_map<string, torch::Tensor> mappings;
+    mappings["states"] = states;
+    mappings["actions"] = actions;
+    mappings["rewards"] = rewards;
+    mappings["states_"] = states_;
+    mappings["dones"] = dones;
+    return mappings;
+  }
+  int max_mem, input_dims, n_actions, idx, mem_cntr, max_memory;
+  torch::Tensor states, actions, rewards, states_, dones, state_memory,
+      action_memory, reward_memory, new_state_memory, terminal_memory;
+  torch::Tensor min_mem, batch;
+};
 
+// MAIN FUNCTION
 int main() {
+
   // Data is set by row x col [Close, High, Low, Open]
   torch::Tensor data = get_data();
   torch::Tensor state, reward, state_, usr_action;
   torch::Tensor s, a, r, s_, d;
   float money = 5000.00;
   unordered_map<string, torch::Tensor> mapping;
+  unordered_map<string, torch::Tensor> experience;
 
   Env env(data, money);
-  ReplayMemory memory(100000, env.observation_space.sizes()[0],
+  ReplayBuffer memory(100000, env.observation_space.sizes()[0],
                       env.action_space.sizes()[0]);
 
   // Example loop
@@ -229,5 +280,6 @@ int main() {
       finish = done.item<bool>();
     }
   } // End of loop
-  s, a, r, s_, d = memory.sample_buffer(3);
+  experience = memory.sample_buffer(3);
+  cout << experience["states"] << endl;
 }
