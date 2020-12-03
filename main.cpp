@@ -41,7 +41,7 @@ torch::Tensor get_data() {
 class Env {
 public:
   // Variable user gets back
-  torch::Tensor state, state_, reward;
+  torch::Tensor state, state_, reward, reward_calc;
   torch::Tensor data, profits, action_space, observation_space, btc_price, done,
       usr_action;
   float investment, prev_holdings, new_holdings, rewards, usd_wallet,
@@ -91,12 +91,14 @@ public:
     total = new_holdings;
     profits[timestep - 1] = new_holdings;
     rewards = ((new_holdings - prev_holdings) * reward_dec) * 0.5;
-    reward = torch::tensor(rewards, torch::kFloat32) + (norm(profits) * 0.1);
+    reward_calc =
+        torch::tensor(rewards, torch::kFloat32) + (torch::norm(profits) * 0.1);
+    rewards = reward_calc.item().to<float>();
+    reward = torch::tensor(1.2, torch::kFloat32);
 
-    // s'
     state_ = get_state();
     // checks for last timestep
-    if (timestep == n_steps) {
+    if (timestep == n_steps - 1) {
       done = torch::tensor(true, torch::kBool);
     } else {
       done = torch::tensor(false, torch::kBool);
@@ -109,7 +111,7 @@ public:
 
     // return multiple values
     unordered_map<string, torch::Tensor> mapping;
-    mapping["state"] = state;
+    mapping["state_"] = state_;
     mapping["reward"] = reward;
     mapping["done"] = done;
     mapping["info"] = info;
@@ -124,15 +126,6 @@ public:
   }
 
 private:
-  // Frobenius norm
-  template <class tensor> tensor norm(tensor z) {
-    tensor y = torch::tensor(0, torch::kFloat32);
-    for (int i = 0; i < z.sizes()[0]; i++) {
-      y += torch::abs(torch::pow(z[i], 2));
-    }
-    return torch::sqrt(y);
-  }
-
   // Actions set descriptions
   void action_set(int action) {
     switch (action) {
@@ -208,21 +201,33 @@ private:
 int main() {
   // Data is set by row x col [Close, High, Low, Open]
   torch::Tensor data = get_data();
-  torch::Tensor state;
+  torch::Tensor state, reward, state_, usr_action;
+  torch::Tensor s, a, r, s_, d;
   float money = 5000.00;
+  unordered_map<string, torch::Tensor> mapping;
 
   Env env(data, money);
+  ReplayMemory memory(100000, env.observation_space.sizes()[0],
+                      env.action_space.sizes()[0]);
 
-  int action;
-  unordered_map<string, torch::Tensor> mapping;
   // Example loop
-  for (int k = 0; k < 10; k++) {
-    cout << "Step " << k << endl;
-    action = env.sample_actions();
-    cout << "Action Taken: " << action << endl;
-    mapping = env.step(action);
-    cout << "STate_" << mapping["state"] << "\nInfo" << mapping["info"]
-         << "\nDone" << mapping["done"] << "\nREWARD" << mapping["reward"]
-         << endl;
-  }
+  int action;
+  for (int i = 0; i < 15; i++) {
+    state = env.reset();
+    torch::Tensor done = torch::tensor(false, torch::kBool);
+    bool finish = done.item<bool>();
+    cout << "Starting..." << endl;
+    while (!finish) {
+      action = env.sample_actions();
+      mapping = env.step(action);
+      // Assign Variables
+      done = mapping["done"];
+      state_ = mapping["state_"];
+      reward = mapping["reward"];
+      usr_action = torch::tensor(action, torch::kInt32);
+      memory.store_transitions(state, usr_action, reward, state_, done);
+      finish = done.item<bool>();
+    }
+  } // End of loop
+  s, a, r, s_, d = memory.sample_buffer(3);
 }

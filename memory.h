@@ -10,10 +10,9 @@ public:
                          torch::Tensor done);
   torch::Tensor sample_buffer(int batch_size = 32);
 
-  torch::Tensor states, actions, rewards, states_, dones;
-  int max_memory, idx, mem_cntr, batch;
+  torch::Tensor batch, states, actions, rewards, states_, dones;
+  int max_memory, idx, mem_cntr;
 
-private:
   torch::Tensor state_memory, action_memory, reward_memory, new_state_memory,
       terminal_memory;
 };

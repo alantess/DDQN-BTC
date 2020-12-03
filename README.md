@@ -6,6 +6,7 @@
 - Create Environment Class  ✔️
 - Create Agent Class
 - Create Replay Memory ✔️
+		- Need to add mapping to return sample from buffer.
 
 
 
