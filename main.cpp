@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 using namespace std;
+using namespace torch;
 
 // CSV to Torch Tensor
 torch::Tensor get_data() {
@@ -196,6 +197,7 @@ private:
     return state;
   }
 };
+
 // Replay Memory
 class ReplayBuffer {
 public:
@@ -246,9 +248,84 @@ public:
   torch::Tensor min_mem, batch;
 };
 
+// NETWORK
+struct DDQNImpl : nn::Module {
+  DDQNImpl(int input_dims, int n_actions, int fc1_dims, int fc2_dims)
+      : fc1(input_dims, fc1_dims), fc2(fc1_dims, fc2_dims),
+        q(fc2_dims, n_actions) {
+    register_module("fc1", fc1);
+    register_module("fc2", fc2);
+    register_module("q", q);
+    torch::Device device(torch::kCUDA);
+    this->to(device);
+    torch::optim::Adam optimizer(this->parameters(),
+                                 torch::optim::AdamOptions(0.00045));
+  }
+  // Forward Function
+  torch::Tensor forward(torch::Tensor x) {
+    x = torch::relu(fc1(x));
+    x = torch::relu(fc2(x));
+    x = q(x);
+    return x;
+  }
+  // Save Network
+  // Load Network
+
+  torch::nn::Linear fc1, fc2, q;
+};
+TORCH_MODULE(DDQN);
+// Agent Class
+class Agent {
+  Agent(float a, float b, float c, float d, int e, int f, int g, int h, int i,
+        int j, int k)
+      : lr(a), eps(b), eps_dec(c), gamma(d), input_dims(e), n_actions(f),
+        batch_size(g), mem_size(h), replacement(i), fc1_dims(j), fc2_dims(k) {
+    ReplayBuffer memory(mem_size, input_dims, n_actions);
+    DDQN q_eval(input_dims, n_actions, fc1_dims, fc2_dims);
+    DDQN q_train(input_dims, n_actions, fc1_dims, fc2_dims);
+  }
+  // int pick_action(torch::Tensor obs) {
+  //   float x = random_random();
+  //   if (x > eps) {
+  //     torch::Tensor obs = obs.to(device);
+  //     actions = q_train->forward(obs);
+  //     action = torch::argmax(actions).item().to<int>();
+  //   } else {
+  //     action = sample_actions();
+  //   }
+  //   return action;
+  // }
+
+  // Generate a random float (0-1)
+  float random_random() {
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_real_distribution<> distr(0, 1); // define the range
+    return distr(gen);                            // generate numbers
+  }
+  // Generate a radnom action
+  int sample_actions() {
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> distr(0, 8); // define the range
+    return distr(gen);                           // generate numbers
+  }
+
+  torch::Tensor s, a, r, s_, d, obs, state, t_action, reward, state_, done;
+  torch::Tensor actions;
+  unordered_map<string, torch::Tensor> experience;
+
+private:
+  float lr, eps, eps_dec, gamma;
+  int action, input_dims, n_actions, batch_size, mem_size, replacement,
+      fc1_dims, fc2_dims, random;
+};
+
 // MAIN FUNCTION
 int main() {
 
+  DDQN DDQNet(6, 9, 256, 256);
+  cout << DDQNet << endl;
   // Data is set by row x col [Close, High, Low, Open]
   torch::Tensor data = get_data();
   torch::Tensor state, reward, state_, usr_action;
@@ -281,5 +358,10 @@ int main() {
     }
   } // End of loop
   experience = memory.sample_buffer(3);
-  cout << experience["states"] << endl;
+  // s = experience["states"];
+  // s = s.to(device);
+  // cout << s << endl;
+  // torch::Tensor output = DDQNet->forward(s);
+  // cout << output << endl;
+  // cout << torch::argmax(output) << endl;
 }
