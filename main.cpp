@@ -279,15 +279,13 @@ class Agent {
   Agent(float a, float b, float c, float d, int e, int f, int g, int h, int i,
         int j, int k)
       : lr(a), eps(b), eps_dec(c), gamma(d), input_dims(e), n_actions(f),
-        batch_size(g), mem_size(h), replacement(i), fc1_dims(j), fc2_dims(k) {
-    ReplayBuffer memory(mem_size, input_dims, n_actions);
-    DDQN q_eval(input_dims, n_actions, fc1_dims, fc2_dims);
-    DDQN q_train(input_dims, n_actions, fc1_dims, fc2_dims);
-  }
+        batch_size(g), mem_size(h), replacement(i), fc1_dims(j), fc2_dims(k),
+        q_eval(e, f, j, k), q_train(e, f, j, k), memory(h, e, f) {}
+  //
   // int pick_action(torch::Tensor obs) {
   //   float x = random_random();
   //   if (x > eps) {
-  //     torch::Tensor obs = obs.to(device);
+  //     Tensor obs = obs.to(device);
   //     actions = q_train->forward(obs);
   //     action = torch::argmax(actions).item().to<int>();
   //   } else {
@@ -316,6 +314,8 @@ class Agent {
   unordered_map<string, torch::Tensor> experience;
 
 private:
+  DDQN q_eval, q_train;
+  ReplayBuffer memory;
   float lr, eps, eps_dec, gamma;
   int action, input_dims, n_actions, batch_size, mem_size, replacement,
       fc1_dims, fc2_dims, random;
