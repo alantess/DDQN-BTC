@@ -268,31 +268,103 @@ struct DDQNImpl : nn::Module {
     x = q(x);
     return x;
   }
-  // Save Network
-  // Load Network
-
+  torch::optim::Adam optimizer();
   torch::nn::Linear fc1, fc2, q;
 };
 TORCH_MODULE(DDQN);
 // Agent Class
 class Agent {
+public:
   Agent(float a, float b, float c, float d, int e, int f, int g, int h, int i,
         int j, int k)
       : lr(a), eps(b), eps_dec(c), gamma(d), input_dims(e), n_actions(f),
         batch_size(g), mem_size(h), replacement(i), fc1_dims(j), fc2_dims(k),
-        q_eval(e, f, j, k), q_train(e, f, j, k), memory(h, e, f) {}
-  //
-  // int pick_action(torch::Tensor obs) {
-  //   float x = random_random();
-  //   if (x > eps) {
-  //     Tensor obs = obs.to(device);
-  //     actions = q_train->forward(obs);
-  //     action = torch::argmax(actions).item().to<int>();
-  //   } else {
-  //     action = sample_actions();
-  //   }
-  //   return action;
-  // }
+        q_eval(e, f, j, k), q_train(e, f, j, k), memory(h, e, f),
+        optimizer(q_train->parameters(), torch::optim::AdamOptions(2e-4)) {
+    update_cntr = 0;
+    float eps_min = 0.01;
+  }
+  // Picks an action
+  int pick_action(torch::Tensor obs) {
+    float x = random_random();
+    if (x > eps) {
+      torch::Device device(torch::kCUDA);
+      Tensor obs = obs.to(device);
+      actions = q_train->forward(obs);
+      action = torch::argmax(actions).item().to<int>();
+    } else {
+      action = sample_actions();
+    }
+    return action;
+  }
+  // Stores Experience
+  void store_transitions(torch::Tensor state, torch::Tensor action,
+                         torch::Tensor reward, torch::Tensor state_,
+                         torch::Tensor done) {
+    memory.store_transitions(state, action, reward, state, done);
+  }
+  // Update target networks
+  void update_target_net() {
+    if (update_cntr % replacement == 0) {
+
+      torch::save(q_train, "q_train_copy.pt");
+      torch::load(q_eval, "q_train_copy.pt");
+    }
+  }
+  // Load
+  void load() {
+    cout << "Loading.." << endl;
+    torch::load(q_eval, "q_eval.pt");
+    torch::load(q_train, "q_train.pt");
+  }
+  // Save networks
+  void save() {
+    cout << "Saving..." << endl;
+    torch::save(q_eval, "q_eval.pt");
+    torch::save(q_train, "q_train.pt");
+  }
+  // Learn
+  void learn() {
+    if (memory.mem_cntr < batch_size) {
+      return;
+    }
+    torch::Device device(torch::kCUDA);
+    experience = memory.sample_buffer(batch_size);
+    s = experience["states"];
+    a = experience["actions"];
+    r = experience["rewards"];
+    s_ = experience["states_"];
+    d = experience["dones"];
+    s = s.to(device);
+    a = a.to(device);
+    r = r.to(device);
+    s_ = s_.to(device);
+    d = d.to(device);
+
+    q_train->zero_grad();
+    update_target_net();
+    torch::Tensor indices = torch::arange(batch_size);
+
+    torch::Tensor q_pred = q_train->forward(s) * a;
+    torch::Tensor q_next = q_eval->forward(s_);
+    torch::Tensor q_train_net = q_train->forward(s_);
+
+    torch::Tensor max_actions = torch::argmax(q_train_net, 1);
+
+    q_next[d] = 0.0;
+    torch::Tensor y = r + gamma * q_next[indices, max_actions];
+
+    torch::Tensor loss = torch::nn::functional::mse_loss(y, q_pred).to(device);
+    loss.backward();
+    optimizer.step();
+
+    update_cntr += 1;
+    if (eps > eps_min) {
+      eps -= eps_dec;
+    } else {
+      eps = eps_min;
+    }
+  }
 
   // Generate a random float (0-1)
   float random_random() {
@@ -309,23 +381,23 @@ class Agent {
     return distr(gen);                           // generate numbers
   }
 
-  torch::Tensor s, a, r, s_, d, obs, state, t_action, reward, state_, done;
+  torch::Tensor s, a, r, s_, d, obs;
   torch::Tensor actions;
   unordered_map<string, torch::Tensor> experience;
 
 private:
+  torch::optim::Adam optimizer;
+
   DDQN q_eval, q_train;
   ReplayBuffer memory;
-  float lr, eps, eps_dec, gamma;
-  int action, input_dims, n_actions, batch_size, mem_size, replacement,
-      fc1_dims, fc2_dims, random;
+  float lr, eps, eps_dec, eps_min, gamma;
+  int action, update_cntr, input_dims, n_actions, batch_size, mem_size,
+      replacement, fc1_dims, fc2_dims, random;
 };
 
 // MAIN FUNCTION
 int main() {
 
-  DDQN DDQNet(6, 9, 256, 256);
-  cout << DDQNet << endl;
   // Data is set by row x col [Close, High, Low, Open]
   torch::Tensor data = get_data();
   torch::Tensor state, reward, state_, usr_action;
@@ -337,8 +409,7 @@ int main() {
   Env env(data, money);
   ReplayBuffer memory(100000, env.observation_space.sizes()[0],
                       env.action_space.sizes()[0]);
-
-  // Example loop
+  Agent(0.00045, 1.0, 4e-4, 0.99, 6, 9, 16, 1000000, 1250, 256, 512);
   int action;
   for (int i = 0; i < 15; i++) {
     state = env.reset();
