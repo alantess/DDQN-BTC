@@ -7,10 +7,10 @@
 
 ## Run
 ````````
- ``` 
+  
   cd build
   cmake --build . --config Release && ./main
- ```
+ 
 ``````````
 
 ## Tasks
