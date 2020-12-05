@@ -268,7 +268,6 @@ struct DDQNImpl : nn::Module {
     x = q(x);
     return x;
   }
-  torch::optim::Adam optimizer();
   torch::nn::Linear fc1, fc2, q;
 };
 TORCH_MODULE(DDQN);
@@ -279,8 +278,7 @@ public:
         int j, int k)
       : lr(a), eps(b), eps_dec(c), gamma(d), input_dims(e), n_actions(f),
         batch_size(g), mem_size(h), replacement(i), fc1_dims(j), fc2_dims(k),
-        q_eval(e, f, j, k), q_train(e, f, j, k), memory(h, e, f),
-        optimizer(q_train->parameters(), torch::optim::AdamOptions(2e-4)) {
+        q_eval(e, f, j, k), q_train(e, f, j, k), memory(h, e, f) {
     update_cntr = 0;
     float eps_min = 0.01;
   }
@@ -325,6 +323,7 @@ public:
   }
   // Learn
   void learn() {
+
     if (memory.mem_cntr < batch_size) {
       return;
     }
@@ -346,17 +345,14 @@ public:
     torch::Tensor indices = torch::arange(batch_size);
 
     torch::Tensor q_pred = q_train->forward(s) * a;
+    q_pred = torch::sum(q_pred, 1);
     torch::Tensor q_next = q_eval->forward(s_);
     torch::Tensor q_train_net = q_train->forward(s_);
-
     torch::Tensor max_actions = torch::argmax(q_train_net, 1);
-
-    q_next[d] = 0.0;
-    torch::Tensor y = r + gamma * q_next[indices, max_actions];
-
+    q_next.index({d}) = 0.0;
+    torch::Tensor y = r + gamma * q_next.index({indices, max_actions});
     torch::Tensor loss = torch::nn::functional::mse_loss(y, q_pred).to(device);
     loss.backward();
-    optimizer.step();
 
     update_cntr += 1;
     if (eps > eps_min) {
@@ -380,14 +376,9 @@ public:
     std::uniform_int_distribution<> distr(0, 8); // define the range
     return distr(gen);                           // generate numbers
   }
-
   torch::Tensor s, a, r, s_, d, obs;
   torch::Tensor actions;
   unordered_map<string, torch::Tensor> experience;
-
-private:
-  torch::optim::Adam optimizer;
-
   DDQN q_eval, q_train;
   ReplayBuffer memory;
   float lr, eps, eps_dec, eps_min, gamma;
@@ -407,15 +398,21 @@ int main() {
   unordered_map<string, torch::Tensor> experience;
 
   Env env(data, money);
-  ReplayBuffer memory(100000, env.observation_space.sizes()[0],
-                      env.action_space.sizes()[0]);
-  Agent(0.00045, 1.0, 4e-4, 0.99, 6, 9, 16, 1000000, 1250, 256, 512);
+  cout << "Environment created..." << endl;
+  Agent agent(0.00045, 1.0, 4e-4, 0.99, 6, 9, 16, 1000000, 1250, 256, 512);
+  cout << "Agent created..." << endl;
+
+  cout << "Starting..." << endl;
+
+  torch::optim::Adam train_optimizer(
+      agent.q_train->parameters(),
+      torch::optim::AdamOptions(2e-4).betas(std::make_tuple(0.5, 0.5)));
+
   int action;
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < 500; i++) {
     state = env.reset();
     torch::Tensor done = torch::tensor(false, torch::kBool);
     bool finish = done.item<bool>();
-    cout << "Starting..." << endl;
     while (!finish) {
       action = env.sample_actions();
       mapping = env.step(action);
@@ -424,15 +421,15 @@ int main() {
       state_ = mapping["state_"];
       reward = mapping["reward"];
       usr_action = torch::tensor(action, torch::kInt32);
-      memory.store_transitions(state, usr_action, reward, state_, done);
+      agent.store_transitions(state, usr_action, reward, state_, done);
+      agent.learn();
+      train_optimizer.step();
+      if (i + 1 % 25 == 0) {
+        torch::save(train_optimizer, "optimizer-checkpoint.pt");
+      }
       finish = done.item<bool>();
     }
+    cout << "Episode " << i << "\t" << mapping["info"] << "\tReward" << reward
+         << endl;
   } // End of loop
-  experience = memory.sample_buffer(3);
-  // s = experience["states"];
-  // s = s.to(device);
-  // cout << s << endl;
-  // torch::Tensor output = DDQNet->forward(s);
-  // cout << output << endl;
-  // cout << torch::argmax(output) << endl;
 }

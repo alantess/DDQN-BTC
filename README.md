@@ -6,7 +6,8 @@
 - Create Environment Class  ✔️
 - Create Agent Class ✔️
 - Create Replay Memory ✔️
-- Create a main loop to test the agent 
+- Create a main loop to test the agent ✔️
+
 
 
 
