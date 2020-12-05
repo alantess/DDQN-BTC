@@ -1,7 +1,7 @@
 # C++ Version of DDQN on Crypto
 
 ## Todos
-- Retrieve & normalize data --> Find a way to normalize data for the agent 
+- Retrieve & normalize data ✔️
 - Create Network Class ✔️
 - Create Environment Class  ✔️
 - Create Agent Class ✔️

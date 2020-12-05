@@ -428,6 +428,7 @@ int main() {
       agent.store_transitions(state, usr_action, reward, state_, done);
       agent.learn();
       train_optimizer.step();
+
       finish = done.item<bool>();
     }
     if (i % 25 == 0) {
