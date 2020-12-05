@@ -94,7 +94,7 @@ public:
     reward_calc =
         torch::tensor(rewards, torch::kFloat32) + (torch::norm(profits) * 0.1);
     rewards = reward_calc.item().to<float>();
-    reward = torch::tensor(1.2, torch::kFloat32);
+    reward = torch::tensor(rewards, torch::kFloat32);
 
     state_ = get_state();
     // checks for last timestep
@@ -429,7 +429,7 @@ int main() {
       }
       finish = done.item<bool>();
     }
-    cout << "Episode " << i << "\t" << mapping["info"] << "\tReward" << reward
+    cout << "Episode " << i << "\t" << mapping["info"] << "\tReward " << reward
          << endl;
   } // End of loop
 }
