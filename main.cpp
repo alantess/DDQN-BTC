@@ -69,7 +69,7 @@ public:
     btc_wallet = 0;
     usd_wallet = investment;
     get_price();
-    reward_dec = (reward_dec > 0) ? reward_dec : 0;
+    reward_dec = (reward_dec > 0) ? reward_dec - 0.99e-3 : 0;
     total = 0;
     state = get_state();
     return state;
@@ -403,7 +403,7 @@ int main() {
 
   Env env(data, money);
   cout << "Environment created..." << endl;
-  Agent agent(0.00045, 1.0, 4e-4, 0.99, 6, 9, 16, 1000000, 1250, 256, 512);
+  Agent agent(0.00035, 1.0, 4e-4, 0.99, 6, 9, 16, 1000000, 1250, 256, 512);
   cout << "Agent created..." << endl;
 
   cout << "Starting..." << endl;
@@ -430,12 +430,12 @@ int main() {
       train_optimizer.step();
       finish = done.item<bool>();
     }
-    if (i % 25 == 0) {
+    if (i % 100 == 0) {
       torch::save(train_optimizer, "optimizer-checkpoint.pt");
       agent.save();
     }
 
-    cout << "Episode " << i << "\t" << mapping["info"] << "\tReward " << reward
+    cout << "Episode " << i << "\n$" << mapping["info"] << "\tReward " << reward
          << endl;
   } // End of loop
 }
